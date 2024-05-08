@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"start-feishubot/gredis"
 	"start-feishubot/handlers"
 	"start-feishubot/initialization"
 	"start-feishubot/logger"
@@ -26,6 +27,7 @@ func main() {
 	handlers.InitHandlers(gpt, *config)
 
 	models.Setup()
+	gredis.Setup()
 
 	eventHandler := dispatcher.NewEventDispatcher(
 		config.FeishuAppVerificationToken, config.FeishuAppEncryptKey).

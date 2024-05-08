@@ -48,6 +48,13 @@ type Config struct {
 	DBMaxIdleConns             int
 	DBMaxOpenConns             int
 	DBLocal                    string
+
+	RedisMaxIdle   int
+	RedisMaxActive int
+	RedisIdleTime  int
+	RedisHost      string
+	RedisPort      int
+	RedisPassword  string
 }
 
 var (
@@ -109,6 +116,13 @@ func LoadConfig(cfg string) *Config {
 		DBMaxIdleConns:             getViperIntValue("DB_MAX_IDLE_CONNS", 5),
 		DBMaxOpenConns:             getViperIntValue("DB_MAX_OPEN_CONNS", 10),
 		DBLocal:                    getViperStringValue("DB_LOCAL", "Asia%2FShanghai"),
+
+		RedisMaxIdle:   getViperIntValue("REDIS_MAX_IDLE", 10),
+		RedisMaxActive: getViperIntValue("REDIS_MAX_ACTIVE", 100),
+		RedisIdleTime:  getViperIntValue("REDIS_IDLE_TIME", 60),
+		RedisHost:      getViperStringValue("REDIS_HOST", ""),
+		RedisPort:      getViperIntValue("REDIS_PORT", 6379),
+		RedisPassword:  getViperStringValue("REDIS_PASSWORD", ""),
 	}
 
 	return config
