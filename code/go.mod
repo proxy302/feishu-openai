@@ -7,7 +7,9 @@ require github.com/larksuite/oapi-sdk-go/v3 v3.0.14
 require (
 	github.com/duke-git/lancet/v2 v2.1.17
 	github.com/gin-gonic/gin v1.8.2
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/uuid v1.3.0
+	github.com/jinzhu/gorm v1.9.16
 	github.com/larksuite/oapi-sdk-gin v1.0.0
 	github.com/pandodao/tokenizer-go v0.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -20,6 +22,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/dlclark/regexp2 v1.8.1 // indirect
 	github.com/dop251/goja v0.0.0-20230304130813-e2f543bf4b4c // indirect
 	github.com/dop251/goja_nodejs v0.0.0-20230226152057-060fa99b809f // indirect
@@ -32,6 +35,7 @@ require (
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/google/pprof v0.0.0-20230309165930-d61513b1440d // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect

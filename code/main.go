@@ -5,6 +5,9 @@ import (
 	"start-feishubot/handlers"
 	"start-feishubot/initialization"
 	"start-feishubot/logger"
+	"start-feishubot/models"
+
+	"start-feishubot/services/openai"
 
 	"github.com/gin-gonic/gin"
 	sdkginext "github.com/larksuite/oapi-sdk-gin"
@@ -12,7 +15,6 @@ import (
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/spf13/pflag"
-	"start-feishubot/services/openai"
 )
 
 func main() {
@@ -22,6 +24,8 @@ func main() {
 	initialization.LoadLarkClient(*config)
 	gpt := openai.NewChatGPT(*config)
 	handlers.InitHandlers(gpt, *config)
+
+	models.Setup()
 
 	eventHandler := dispatcher.NewEventDispatcher(
 		config.FeishuAppVerificationToken, config.FeishuAppEncryptKey).

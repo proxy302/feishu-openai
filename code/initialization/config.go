@@ -38,6 +38,16 @@ type Config struct {
 	AzureResourceName          string
 	AzureOpenaiToken           string
 	StreamMode                 bool
+	DBDialect                  string
+	DBDatabase                 string
+	DBUser                     string
+	DBPassword                 string
+	DBCharset                  string
+	DBHost                     string
+	DBPort                     int
+	DBMaxIdleConns             int
+	DBMaxOpenConns             int
+	DBLocal                    string
 }
 
 var (
@@ -89,6 +99,16 @@ func LoadConfig(cfg string) *Config {
 		AzureResourceName:          getViperStringValue("AZURE_RESOURCE_NAME", ""),
 		AzureOpenaiToken:           getViperStringValue("AZURE_OPENAI_TOKEN", ""),
 		StreamMode:                 getViperBoolValue("STREAM_MODE", false),
+		DBDialect:                  getViperStringValue("DB_DIALECT", "mysql"),
+		DBDatabase:                 getViperStringValue("DB_DATABASE", ""),
+		DBUser:                     getViperStringValue("DB_USER", ""),
+		DBPassword:                 getViperStringValue("DB_PASSWORD", ""),
+		DBCharset:                  getViperStringValue("DB_CHARSET", "utf8mb4"),
+		DBHost:                     getViperStringValue("DB_HOST", ""),
+		DBPort:                     getViperIntValue("DB_PORT", 3306),
+		DBMaxIdleConns:             getViperIntValue("DB_MAX_IDLE_CONNS", 5),
+		DBMaxOpenConns:             getViperIntValue("DB_MAX_OPEN_CONNS", 10),
+		DBLocal:                    getViperStringValue("DB_LOCAL", "Asia%2FShanghai"),
 	}
 
 	return config
@@ -102,8 +122,8 @@ func getViperStringValue(key string, defaultValue string) string {
 	return value
 }
 
-//OPENAI_KEY: sk-xxx,sk-xxx,sk-xxx
-//result:[sk-xxx sk-xxx sk-xxx]
+// OPENAI_KEY: sk-xxx,sk-xxx,sk-xxx
+// result:[sk-xxx sk-xxx sk-xxx]
 func getViperStringArray(key string, defaultValue []string) []string {
 	value := viper.GetString(key)
 	if value == "" {
