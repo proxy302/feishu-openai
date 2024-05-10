@@ -223,6 +223,37 @@ func NewChatGPT(config initialization.Config) *ChatGPT {
 	}
 }
 
+func Ai302NewChatGPT(config initialization.Config, model string, token string) *ChatGPT {
+	var lb *loadbalancer.LoadBalancer
+	if config.AzureOn {
+		keys := []string{config.AzureOpenaiToken}
+		lb = loadbalancer.NewLoadBalancer(keys)
+	} else {
+		lb = loadbalancer.NewLoadBalancer(config.OpenaiApiKeys)
+	}
+	platform := OpenAI
+	if config.AzureOn {
+		platform = Azure
+	}
+	return &ChatGPT{
+		Lb:        lb,
+		ApiKey:    []string{token},
+		ApiUrl:    config.OpenaiApiUrl,
+		HttpProxy: config.HttpProxy,
+		// Model:     config.OpenaiModel,
+		Model:     model,
+		MaxTokens: config.OpenaiMaxTokens,
+		Platform:  platform,
+		AzureConfig: AzureConfig{
+			BaseURL:        AzureApiUrlV1,
+			ResourceName:   config.AzureResourceName,
+			DeploymentName: config.AzureDeploymentName,
+			ApiVersion:     config.AzureApiVersion,
+			ApiToken:       config.AzureOpenaiToken,
+		},
+	}
+}
+
 func (gpt *ChatGPT) FullUrl(suffix string) string {
 	var url string
 	switch gpt.Platform {

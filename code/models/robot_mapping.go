@@ -10,6 +10,7 @@ type RobotMapping struct {
 	FeishuAppSecret         string `json:"feishu_app_secret"`
 	FeishuVerificationToken string `json:"feishu_verification_token"`
 	FeishuEncryptKey        string `json:"feishu_encrypt_key"`
+	FeishuBotName           string `json:"feishu_bot_name"`
 }
 
 func (RobotMapping) TableName() string {

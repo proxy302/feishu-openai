@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	"start-feishubot/feishu_handler"
 	"start-feishubot/gredis"
 	"start-feishubot/handlers"
 	"start-feishubot/initialization"
@@ -11,10 +11,6 @@ import (
 	"start-feishubot/services/openai"
 
 	"github.com/gin-gonic/gin"
-	sdkginext "github.com/larksuite/oapi-sdk-gin"
-	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
-	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
-	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/spf13/pflag"
 )
 
@@ -29,17 +25,17 @@ func main() {
 	models.Setup()
 	gredis.Setup()
 
-	eventHandler := dispatcher.NewEventDispatcher(
-		config.FeishuAppVerificationToken, config.FeishuAppEncryptKey).
-		OnP2MessageReceiveV1(handlers.Handler).
-		OnP2MessageReadV1(func(ctx context.Context, event *larkim.P2MessageReadV1) error {
-			logger.Debugf("收到请求 %v", event.RequestURI)
-			return handlers.ReadHandler(ctx, event)
-		})
+	//eventHandler := dispatcher.NewEventDispatcher(
+	//	config.FeishuAppVerificationToken, config.FeishuAppEncryptKey).
+	//	OnP2MessageReceiveV1(handlers.Handler).
+	//	OnP2MessageReadV1(func(ctx context.Context, event *larkim.P2MessageReadV1) error {
+	//		logger.Debugf("收到请求 %v", event.RequestURI)
+	//		return handlers.ReadHandler(ctx, event)
+	//	})
 
-	cardHandler := larkcard.NewCardActionHandler(
-		config.FeishuAppVerificationToken, config.FeishuAppEncryptKey,
-		handlers.CardHandler())
+	// cardHandler := larkcard.NewCardActionHandler(
+	// 	config.FeishuAppVerificationToken, config.FeishuAppEncryptKey,
+	// 	handlers.CardHandler())
 
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
@@ -47,11 +43,13 @@ func main() {
 			"message": "pong",
 		})
 	})
-	r.POST("/webhook/event",
-		sdkginext.NewEventHandlerFunc(eventHandler))
-	r.POST("/webhook/card",
-		sdkginext.NewCardActionHandlerFunc(
-			cardHandler))
+	r.POST("/webhook/event", feishu_handler.EventHandler)
+	r.POST("/webhook/card", feishu_handler.CardHandler)
+	// 	r.POST("/webhook/event",
+	// 		sdkginext.NewEventHandlerFunc(eventHandler))
+	// 	r.POST("/webhook/card",
+	// 		sdkginext.NewCardActionHandlerFunc(
+	// 			cardHandler))
 
 	if err := initialization.StartServer(*config, r); err != nil {
 		logger.Fatalf("failed to start server: %v", err)

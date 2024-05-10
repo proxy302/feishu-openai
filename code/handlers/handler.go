@@ -3,9 +3,10 @@ package handlers
 import (
 	"context"
 	"fmt"
-	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	"start-feishubot/logger"
 	"strings"
+
+	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 
 	"start-feishubot/initialization"
 	"start-feishubot/services"
@@ -30,6 +31,7 @@ type MessageHandler struct {
 	msgCache     services.MsgCacheInterface
 	gpt          *openai.ChatGPT
 	config       initialization.Config
+	botName      string
 }
 
 func (m MessageHandler) cardHandler(ctx context.Context,
@@ -128,7 +130,7 @@ func (m MessageHandler) judgeIfMentionMe(mention []*larkim.
 	if len(mention) != 1 {
 		return false
 	}
-	return *mention[0].Name == m.config.FeishuBotName
+	return *mention[0].Name == m.botName
 }
 
 func AzureModeCheck(a *ActionInfo) bool {
