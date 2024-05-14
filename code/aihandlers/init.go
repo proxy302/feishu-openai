@@ -34,7 +34,6 @@ const (
 
 func InitHandlers(gpt *openai.ChatGPT, config initialization.Config, tokenMappingID int, botName string) MessageHandlerInterface {
 	key := fmt.Sprintf("%s_%d", CacheAi302Handler, tokenMappingID)
-	sdhandlers.Get(key)
 	if sdhandlers.Exists(key) {
 		result, _ := sdhandlers.Get(key)
 		return result.(MessageHandlerInterface)
@@ -43,6 +42,14 @@ func InitHandlers(gpt *openai.ChatGPT, config initialization.Config, tokenMappin
 		sdhandlers.Put(key, result)
 		return result
 	}
+}
+
+func UpdateHandler(id int) {
+	key := fmt.Sprintf("%s_%d", CacheAi302Handler, id)
+	if sdhandlers.Exists(key) {
+		sdhandlers.Delete(key)
+	}
+	return
 }
 
 // func  Handler(ctx context.Context, event *larkim.P2MessageReceiveV1) error {

@@ -45,6 +45,7 @@ func main() {
 	})
 	r.POST("/webhook/event", feishu_handler.EventHandler)
 	r.POST("/webhook/card", feishu_handler.CardHandler)
+	r.POST("/webhook/update", feishu_handler.UpdateHandler)
 	// 	r.POST("/webhook/event",
 	// 		sdkginext.NewEventHandlerFunc(eventHandler))
 	// 	r.POST("/webhook/card",
