@@ -27,17 +27,18 @@ func chain(data *ActionInfo, actions ...Action) bool {
 }
 
 type MessageHandler struct {
-	sessionCache services.SessionServiceCacheInterface
-	msgCache     services.MsgCacheInterface
-	gpt          *openai.ChatGPT
-	config       initialization.Config
-	BotName      string
+	sessionCache   services.SessionServiceCacheInterface
+	msgCache       services.MsgCacheInterface
+	gpt            *openai.ChatGPT
+	config         initialization.Config
+	BotName        string
+	TokenMappingID int
 }
 
-func (m MessageHandler) CardHandler(ctx context.Context,
+func (m MessageHandler) cardHandler(ctx context.Context,
 	cardAction *larkcard.CardAction) (interface{}, error) {
 	messageHandler := NewCardHandler(m)
-	return messageHandler(ctx, cardAction)
+	return messageHandler(ctx, cardAction, m.TokenMappingID)
 }
 
 func (m MessageHandler) Handler(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
@@ -93,25 +94,26 @@ func (m MessageHandler) msgReceivedHandler(ctx context.Context, event *larkim.P2
 		mention:     mention,
 	}
 	data := &ActionInfo{
-		ctx:     &ctx,
-		handler: &m,
-		info:    &msgInfo,
+		ctx:            &ctx,
+		handler:        &m,
+		info:           &msgInfo,
+		TokenMappingID: m.TokenMappingID,
 	}
 	actions := []Action{
-		&ProcessedUniqueAction{}, //避免重复处理
-		&ProcessMentionAction{},  //判断机器人是否应该被调用
-		&AudioAction{},           //语音处理
-		&ClearAction{},           //清除消息处理
-		&VisionAction{},          //图片推理处理
-		&PicAction{},             //图片处理
-		&AIModeAction{},          //模式切换处理
-		&RoleListAction{},        //角色列表处理
-		&HelpAction{},            //帮助处理
-		&BalanceAction{},         //余额处理
-		&RolePlayAction{},        //角色扮演处理
-		&MessageAction{},         //消息处理
-		&EmptyAction{},           //空消息处理
-		&StreamMessageAction{},   //流式消息处理
+		&ProcessedUniqueAction{TokenMappingID: m.TokenMappingID}, //避免重复处理
+		&ProcessMentionAction{TokenMappingID: m.TokenMappingID},  //判断机器人是否应该被调用
+		&AudioAction{TokenMappingID: m.TokenMappingID},           //语音处理
+		&ClearAction{TokenMappingID: m.TokenMappingID},           //清除消息处理
+		// &VisionAction{TokenMappingID: m.TokenMappingID},          //图片推理处理
+		// &PicAction{TokenMappingID: m.TokenMappingID},             //图片处理
+		&AIModeAction{TokenMappingID: m.TokenMappingID},   //模式切换处理
+		&RoleListAction{TokenMappingID: m.TokenMappingID}, //角色列表处理
+		&HelpAction{TokenMappingID: m.TokenMappingID},     //帮助处理
+		// &BalanceAction{TokenMappingID: m.TokenMappingID},         //余额处理
+		&RolePlayAction{TokenMappingID: m.TokenMappingID},      //角色扮演处理
+		&MessageAction{TokenMappingID: m.TokenMappingID},       //消息处理
+		&EmptyAction{TokenMappingID: m.TokenMappingID},         //空消息处理
+		&StreamMessageAction{TokenMappingID: m.TokenMappingID}, //流式消息处理
 	}
 	chain(data, actions...)
 	return nil
@@ -120,13 +122,14 @@ func (m MessageHandler) msgReceivedHandler(ctx context.Context, event *larkim.P2
 // var _ MessageHandlerInterface = (*MessageHandler)(nil)
 
 func NewMessageHandler(gpt *openai.ChatGPT,
-	config initialization.Config, botName string) MessageHandlerInterface {
+	config initialization.Config, botName string, tokenMappingID int) MessageHandlerInterface {
 	return &MessageHandler{
-		sessionCache: services.GetSessionCache(),
-		msgCache:     services.GetMsgCache(),
-		gpt:          gpt,
-		config:       config,
-		BotName:      botName,
+		sessionCache:   services.GetSessionCache(),
+		msgCache:       services.GetMsgCache(),
+		gpt:            gpt,
+		config:         config,
+		BotName:        botName,
+		TokenMappingID: tokenMappingID,
 	}
 }
 

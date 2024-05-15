@@ -12,22 +12,22 @@ import (
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 )
 
-func NewPicResolutionHandler(cardMsg CardMsg, m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+func NewPicResolutionHandler(cardMsg CardMsg, m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 		if cardMsg.Kind == PicResolutionKind {
-			CommonProcessPicResolution(cardMsg, cardAction, m.sessionCache)
+			CommonProcessPicResolution(cardMsg, cardAction, m.sessionCache, tokenMappingID)
 			return nil, nil
 		}
 		if cardMsg.Kind == PicStyleKind {
-			CommonProcessPicStyle(cardMsg, cardAction, m.sessionCache)
+			CommonProcessPicStyle(cardMsg, cardAction, m.sessionCache, tokenMappingID)
 			return nil, nil
 		}
 		return nil, ErrNextHandler
 	}
 }
 
-func NewPicModeChangeHandler(cardMsg CardMsg, m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+func NewPicModeChangeHandler(cardMsg CardMsg, m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 		if cardMsg.Kind == PicModeChangeKind {
 			newCard, err, done := CommonProcessPicModeChange(cardMsg, m.sessionCache)
 			if done {
@@ -39,8 +39,8 @@ func NewPicModeChangeHandler(cardMsg CardMsg, m MessageHandler) CardHandlerFunc 
 	}
 }
 
-func NewPicTextMoreHandler(cardMsg CardMsg, m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+func NewPicTextMoreHandler(cardMsg CardMsg, m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 		if cardMsg.Kind == PicTextMoreKind {
 			go func() {
 				m.CommonProcessPicMore(cardMsg)
@@ -53,24 +53,24 @@ func NewPicTextMoreHandler(cardMsg CardMsg, m MessageHandler) CardHandlerFunc {
 
 func CommonProcessPicResolution(msg CardMsg,
 	cardAction *larkcard.CardAction,
-	cache services.SessionServiceCacheInterface) {
+	cache services.SessionServiceCacheInterface, tokenMappingID int) {
 	option := cardAction.Action.Option
 	fmt.Println(larkcore.Prettify(msg))
 	cache.SetPicResolution(msg.SessionId, services.Resolution(option))
 	//send text
 	replyMsg(context.Background(), "已更新图片分辨率为"+option,
-		&msg.MsgId)
+		&msg.MsgId, tokenMappingID)
 }
 
 func CommonProcessPicStyle(msg CardMsg,
 	cardAction *larkcard.CardAction,
-	cache services.SessionServiceCacheInterface) {
+	cache services.SessionServiceCacheInterface, tokenMappingID int) {
 	option := cardAction.Action.Option
 	fmt.Println(larkcore.Prettify(msg))
 	cache.SetPicStyle(msg.SessionId, services.PicStyle(option))
 	//send text
 	replyMsg(context.Background(), "已更新图片风格为"+option,
-		&msg.MsgId)
+		&msg.MsgId, tokenMappingID)
 }
 
 func (m MessageHandler) CommonProcessPicMore(msg CardMsg) {
@@ -82,7 +82,7 @@ func (m MessageHandler) CommonProcessPicMore(msg CardMsg) {
 	question := msg.Value.(string)
 	bs64, _ := m.gpt.GenerateOneImage(question, resolution, style)
 	replayImageCardByBase64(context.Background(), bs64, &msg.MsgId,
-		&msg.SessionId, question)
+		&msg.SessionId, question, m.TokenMappingID)
 }
 
 func CommonProcessPicModeChange(cardMsg CardMsg,

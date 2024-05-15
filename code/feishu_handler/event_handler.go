@@ -24,6 +24,7 @@ func EventHandler(c *gin.Context) {
 	reqBody := bytes.Buffer{}
 	io.Copy(&reqBody, c.Request.Body)
 	c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody.Bytes()))
+	logger.Info("reqBody:", reqBody.String())
 
 	data := make(map[string]interface{})
 	json.Unmarshal(reqBody.Bytes(), &data)
@@ -44,7 +45,7 @@ func EventHandler(c *gin.Context) {
 				token, _ := models.GetTokenByID(tokenMapping.ExternalTokenID)
 				model, _ := models.GetModelByID(tokenMapping.ModelID)
 				gpt := openai.Ai302NewChatGPT(*initialization.GetConfig(), model.Name, token.Value)
-				handlers := aihandlers.InitHandlers(gpt, *initialization.GetConfig(), tokenMapping.ID, robotMapping.FeishuBotName)
+				handlers := aihandlers.InitHandlers(gpt, *initialization.GetConfig(), tokenMapping.ID, robotMapping.FeishuBotName, robotMapping.FeishuAppID, robotMapping.FeishuAppSecret)
 
 				eventHandler := dispatcher.NewEventDispatcher(
 					robotMapping.FeishuVerificationToken,
@@ -56,6 +57,7 @@ func EventHandler(c *gin.Context) {
 					})
 				fun := sdkginext.NewEventHandlerFunc(eventHandler)
 				fun(c)
+				return
 			}
 
 		}

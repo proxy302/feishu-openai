@@ -41,6 +41,7 @@ func setDefaultPrompt(msg []openai.Messages) []openai.Messages {
 //}
 
 type MessageAction struct { /*消息*/
+	TokenMappingID int
 }
 
 func (*MessageAction) Execute(a *ActionInfo) bool {
@@ -61,7 +62,7 @@ func (*MessageAction) Execute(a *ActionInfo) bool {
 	completions, err := a.handler.gpt.Completions(msg, aiMode)
 	if err != nil {
 		replyMsg(*a.ctx, fmt.Sprintf(
-			"🤖️：消息机器人摆烂了，请稍后再试～\n错误信息: %v", err), a.info.msgId)
+			"🤖️：消息机器人摆烂了，请稍后再试～\n错误信息: %v", err), a.info.msgId, a.TokenMappingID)
 		return false
 	}
 	msg = append(msg, completions)
@@ -70,18 +71,18 @@ func (*MessageAction) Execute(a *ActionInfo) bool {
 	if len(msg) == 3 {
 		//fmt.Println("new topic", msg[1].Content)
 		sendNewTopicCard(*a.ctx, a.info.sessionId, a.info.msgId,
-			completions.Content)
+			completions.Content, a.TokenMappingID)
 		return false
 	}
 	if len(msg) != 3 {
 		sendOldTopicCard(*a.ctx, a.info.sessionId, a.info.msgId,
-			completions.Content)
+			completions.Content, a.TokenMappingID)
 		return false
 	}
-	err = replyMsg(*a.ctx, completions.Content, a.info.msgId)
+	err = replyMsg(*a.ctx, completions.Content, a.info.msgId, a.TokenMappingID)
 	if err != nil {
 		replyMsg(*a.ctx, fmt.Sprintf(
-			"🤖️：消息机器人摆烂了，请稍后再试～\n错误信息: %v", err), a.info.msgId)
+			"🤖️：消息机器人摆烂了，请稍后再试～\n错误信息: %v", err), a.info.msgId, a.TokenMappingID)
 		return false
 	}
 	return true
@@ -98,6 +99,7 @@ func hasSystemRole(msg []openai.Messages) bool {
 }
 
 type StreamMessageAction struct { /*消息*/
+	TokenMappingID int
 }
 
 func (m *StreamMessageAction) Execute(a *ActionInfo) bool {
@@ -129,7 +131,7 @@ func (m *StreamMessageAction) Execute(a *ActionInfo) bool {
 	noContentTimeout := time.AfterFunc(10*time.Second, func() {
 		log.Println("no content timeout")
 		close(done)
-		err := updateFinalCard(*a.ctx, "请求超时", cardId, ifNewTopic)
+		err := updateFinalCard(*a.ctx, "请求超时", cardId, ifNewTopic, a.TokenMappingID)
 		if err != nil {
 			return
 		}
@@ -140,7 +142,7 @@ func (m *StreamMessageAction) Execute(a *ActionInfo) bool {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				err := updateFinalCard(*a.ctx, "聊天失败", cardId, ifNewTopic)
+				err := updateFinalCard(*a.ctx, "聊天失败", cardId, ifNewTopic, a.TokenMappingID)
 				if err != nil {
 					return
 				}
@@ -153,7 +155,7 @@ func (m *StreamMessageAction) Execute(a *ActionInfo) bool {
 		//fmt.Println("aiMode: ", aiMode)
 		if err := a.handler.gpt.StreamChat(*a.ctx, msg, aiMode,
 			chatResponseStream); err != nil {
-			err := updateFinalCard(*a.ctx, "聊天失败", cardId, ifNewTopic)
+			err := updateFinalCard(*a.ctx, "聊天失败", cardId, ifNewTopic, a.TokenMappingID)
 			if err != nil {
 				return
 			}
@@ -170,7 +172,7 @@ func (m *StreamMessageAction) Execute(a *ActionInfo) bool {
 			case <-done:
 				return
 			case <-ticker.C:
-				err := updateTextCard(*a.ctx, answer, cardId, ifNewTopic)
+				err := updateTextCard(*a.ctx, answer, cardId, ifNewTopic, a.TokenMappingID)
 				if err != nil {
 					return
 				}
@@ -187,7 +189,7 @@ func (m *StreamMessageAction) Execute(a *ActionInfo) bool {
 			answer += res
 			//pp.Println("answer", answer)
 		case <-done: // 添加 done 信号的处理
-			err := updateFinalCard(*a.ctx, answer, cardId, ifNewTopic)
+			err := updateFinalCard(*a.ctx, answer, cardId, ifNewTopic, a.TokenMappingID)
 			if err != nil {
 				return false
 			}
@@ -213,7 +215,7 @@ func (m *StreamMessageAction) Execute(a *ActionInfo) bool {
 func sendOnProcess(a *ActionInfo, ifNewTopic bool) (*string, error) {
 	// send 正在处理中
 	cardId, err := sendOnProcessCard(*a.ctx, a.info.sessionId,
-		a.info.msgId, ifNewTopic)
+		a.info.msgId, ifNewTopic, a.TokenMappingID)
 	if err != nil {
 		return nil, err
 	}

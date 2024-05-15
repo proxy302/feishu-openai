@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"start-feishubot/initialization"
 	"start-feishubot/services"
 	"start-feishubot/services/openai"
 	"start-feishubot/utils"
@@ -13,6 +12,7 @@ import (
 )
 
 type VisionAction struct { /*图片推理*/
+	TokenMappingID int
 }
 
 func (va *VisionAction) Execute(a *ActionInfo) bool {
@@ -22,7 +22,7 @@ func (va *VisionAction) Execute(a *ActionInfo) bool {
 
 	if isVisionCommand(a) {
 		initializeVisionMode(a)
-		sendVisionInstructionCard(*a.ctx, a.info.sessionId, a.info.msgId)
+		sendVisionInstructionCard(*a.ctx, a.info.sessionId, a.info.msgId, a.TokenMappingID)
 		return false
 	}
 
@@ -30,7 +30,7 @@ func (va *VisionAction) Execute(a *ActionInfo) bool {
 
 	if a.info.msgType == "image" {
 		if mode != services.ModeVision {
-			sendVisionModeCheckCard(*a.ctx, a.info.sessionId, a.info.msgId)
+			sendVisionModeCheckCard(*a.ctx, a.info.sessionId, a.info.msgId, a.TokenMappingID)
 			return false
 		}
 
@@ -57,9 +57,9 @@ func initializeVisionMode(a *ActionInfo) {
 
 func (va *VisionAction) handleVisionImage(a *ActionInfo) bool {
 	detail := a.handler.sessionCache.GetVisionDetail(*a.info.sessionId)
-	base64, err := downloadAndEncodeImage(a.info.imageKey, a.info.msgId)
+	base64, err := downloadAndEncodeImage(a.info.imageKey, a.info.msgId, a.TokenMappingID)
 	if err != nil {
-		replyWithErrorMsg(*a.ctx, err, a.info.msgId)
+		replyWithErrorMsg(*a.ctx, err, a.info.msgId, a.TokenMappingID)
 		return false
 	}
 
@@ -74,28 +74,28 @@ func (va *VisionAction) handleVisionPost(a *ActionInfo) bool {
 		if imageKey == "" {
 			continue
 		}
-		base64, err := downloadAndEncodeImage(imageKey, a.info.msgId)
+		base64, err := downloadAndEncodeImage(imageKey, a.info.msgId, a.TokenMappingID)
 		if err != nil {
-			replyWithErrorMsg(*a.ctx, err, a.info.msgId)
+			replyWithErrorMsg(*a.ctx, err, a.info.msgId, a.TokenMappingID)
 			return false
 		}
 		base64s = append(base64s, base64)
 	}
 
 	if len(base64s) == 0 {
-		replyMsg(*a.ctx, "🤖️：请发送一张图片", a.info.msgId)
+		replyMsg(*a.ctx, "🤖️：请发送一张图片", a.info.msgId, a.TokenMappingID)
 		return false
 	}
 
 	return va.processMultipleImagesAndReply(a, base64s, detail)
 }
 
-func downloadAndEncodeImage(imageKey string, msgId *string) (string, error) {
+func downloadAndEncodeImage(imageKey string, msgId *string, tokenMappingID int) (string, error) {
 	f := fmt.Sprintf("%s.png", imageKey)
 	defer os.Remove(f)
 
 	req := larkim.NewGetMessageResourceReqBuilder().MessageId(*msgId).FileKey(imageKey).Type("image").Build()
-	resp, err := initialization.GetLarkClient().Im.MessageResource.Get(context.Background(), req)
+	resp, err := GetLarkClient(tokenMappingID).Im.MessageResource.Get(context.Background(), req)
 	if err != nil {
 		return "", err
 	}
@@ -104,18 +104,18 @@ func downloadAndEncodeImage(imageKey string, msgId *string) (string, error) {
 	return openai.GetBase64FromImage(f)
 }
 
-func replyWithErrorMsg(ctx context.Context, err error, msgId *string) {
-	replyMsg(ctx, fmt.Sprintf("🤖️：图片下载失败，请稍后再试～\n 错误信息: %v", err), msgId)
+func replyWithErrorMsg(ctx context.Context, err error, msgId *string, tokenMappingID int) {
+	replyMsg(ctx, fmt.Sprintf("🤖️：图片下载失败，请稍后再试～\n 错误信息: %v", err), msgId, tokenMappingID)
 }
 
 func (va *VisionAction) processImageAndReply(a *ActionInfo, base64 string, detail string) bool {
 	msg := createVisionMessages("解释这个图片", base64, detail)
 	completions, err := a.handler.gpt.GetVisionInfo(msg)
 	if err != nil {
-		replyWithErrorMsg(*a.ctx, err, a.info.msgId)
+		replyWithErrorMsg(*a.ctx, err, a.info.msgId, a.TokenMappingID)
 		return false
 	}
-	sendVisionTopicCard(*a.ctx, a.info.sessionId, a.info.msgId, completions.Content)
+	sendVisionTopicCard(*a.ctx, a.info.sessionId, a.info.msgId, completions.Content, a.TokenMappingID)
 	return false
 }
 
@@ -123,10 +123,10 @@ func (va *VisionAction) processMultipleImagesAndReply(a *ActionInfo, base64s []s
 	msg := createMultipleVisionMessages(a.info.qParsed, base64s, detail)
 	completions, err := a.handler.gpt.GetVisionInfo(msg)
 	if err != nil {
-		replyWithErrorMsg(*a.ctx, err, a.info.msgId)
+		replyWithErrorMsg(*a.ctx, err, a.info.msgId, a.TokenMappingID)
 		return false
 	}
-	sendVisionTopicCard(*a.ctx, a.info.sessionId, a.info.msgId, completions.Content)
+	sendVisionTopicCard(*a.ctx, a.info.sessionId, a.info.msgId, completions.Content, a.TokenMappingID)
 	return false
 }
 

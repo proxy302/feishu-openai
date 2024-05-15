@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"start-feishubot/aihandlers"
 	"start-feishubot/initialization"
+	"start-feishubot/logger"
 	"start-feishubot/models"
 	"start-feishubot/services/openai"
 
@@ -20,6 +21,7 @@ func CardHandler(c *gin.Context) {
 	reqBody := bytes.Buffer{}
 	io.Copy(&reqBody, c.Request.Body)
 	c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody.Bytes()))
+	logger.Info("reqBody:", reqBody.String())
 
 	data := make(map[string]interface{})
 	json.Unmarshal(reqBody.Bytes(), &data)
@@ -39,14 +41,15 @@ func CardHandler(c *gin.Context) {
 				token, _ := models.GetTokenByID(tokenMapping.ExternalTokenID)
 				model, _ := models.GetModelByID(tokenMapping.ModelID)
 				gpt := openai.Ai302NewChatGPT(*initialization.GetConfig(), model.Name, token.Value)
-				handlers := aihandlers.InitHandlers(gpt, *initialization.GetConfig(), tokenMapping.ID, robotMapping.FeishuBotName)
+				aihandlers.InitHandlers(gpt, *initialization.GetConfig(), tokenMapping.ID, robotMapping.FeishuBotName, robotMapping.FeishuAppID, robotMapping.FeishuAppSecret)
 
 				cardHandler := larkcard.NewCardActionHandler(
 					robotMapping.FeishuVerificationToken, robotMapping.FeishuEncryptKey,
-					handlers.CardHandler)
+					aihandlers.CardHandler(tokenMapping.ID))
 
 				fun := sdkginext.NewCardActionHandlerFunc(cardHandler)
 				fun(c)
+				return
 			}
 
 		}

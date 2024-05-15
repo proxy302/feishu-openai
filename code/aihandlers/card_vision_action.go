@@ -10,18 +10,18 @@ import (
 )
 
 func NewVisionResolutionHandler(cardMsg CardMsg,
-	m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+	m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 		if cardMsg.Kind == VisionStyleKind {
-			CommonProcessVisionStyle(cardMsg, cardAction, m.sessionCache)
+			CommonProcessVisionStyle(cardMsg, cardAction, m.sessionCache, tokenMappingID)
 			return nil, nil
 		}
 		return nil, ErrNextHandler
 	}
 }
 func NewVisionModeChangeHandler(cardMsg CardMsg,
-	m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+	m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 		if cardMsg.Kind == VisionModeChangeKind {
 			newCard, err, done := CommonProcessVisionModeChange(cardMsg, m.sessionCache)
 			if done {
@@ -35,13 +35,13 @@ func NewVisionModeChangeHandler(cardMsg CardMsg,
 
 func CommonProcessVisionStyle(msg CardMsg,
 	cardAction *larkcard.CardAction,
-	cache services.SessionServiceCacheInterface) {
+	cache services.SessionServiceCacheInterface, tokenMappingID int) {
 	option := cardAction.Action.Option
 	fmt.Println(larkcore.Prettify(msg))
 	cache.SetVisionDetail(msg.SessionId, services.VisionDetail(option))
 	//send text
 	replyMsg(context.Background(), "图片解析度调整为："+option,
-		&msg.MsgId)
+		&msg.MsgId, tokenMappingID)
 }
 
 func CommonProcessVisionModeChange(cardMsg CardMsg,

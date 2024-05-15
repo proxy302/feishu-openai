@@ -11,12 +11,12 @@ import (
 )
 
 func NewRoleTagCardHandler(cardMsg CardMsg,
-	m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+	m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 
 		if cardMsg.Kind == RoleTagsChooseKind {
 			newCard, err, done := CommonProcessRoleTag(cardMsg, cardAction,
-				m.sessionCache)
+				m.sessionCache, tokenMappingID)
 			if done {
 				return newCard, err
 			}
@@ -27,12 +27,11 @@ func NewRoleTagCardHandler(cardMsg CardMsg,
 }
 
 func NewRoleCardHandler(cardMsg CardMsg,
-	m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
-
+	m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 		if cardMsg.Kind == RoleChooseKind {
 			newCard, err, done := CommonProcessRole(cardMsg, cardAction,
-				m.sessionCache)
+				m.sessionCache, tokenMappingID)
 			if done {
 				return newCard, err
 			}
@@ -43,7 +42,7 @@ func NewRoleCardHandler(cardMsg CardMsg,
 }
 
 func CommonProcessRoleTag(msg CardMsg, cardAction *larkcard.CardAction,
-	cache services.SessionServiceCacheInterface) (interface{},
+	cache services.SessionServiceCacheInterface, tokenMappingID int) (interface{},
 	error, bool) {
 	option := cardAction.Action.Option
 	//replyMsg(context.Background(), "已选择tag:"+option,
@@ -51,12 +50,12 @@ func CommonProcessRoleTag(msg CardMsg, cardAction *larkcard.CardAction,
 	roles := initialization.GetTitleListByTag(option)
 	//fmt.Printf("roles: %s", roles)
 	SendRoleListCard(context.Background(), &msg.SessionId,
-		&msg.MsgId, option, *roles)
+		&msg.MsgId, option, *roles, tokenMappingID)
 	return nil, nil, true
 }
 
 func CommonProcessRole(msg CardMsg, cardAction *larkcard.CardAction,
-	cache services.SessionServiceCacheInterface) (interface{},
+	cache services.SessionServiceCacheInterface, tokenMappingID int) (interface{},
 	error, bool) {
 	option := cardAction.Action.Option
 	contentByTitle, error := initialization.GetFirstRoleContentByTitle(option)
@@ -70,7 +69,7 @@ func CommonProcessRole(msg CardMsg, cardAction *larkcard.CardAction,
 	cache.SetMsg(msg.SessionId, systemMsg)
 	//pp.Println("systemMsg: ", systemMsg)
 	sendSystemInstructionCard(context.Background(), &msg.SessionId,
-		&msg.MsgId, contentByTitle)
+		&msg.MsgId, contentByTitle, tokenMappingID)
 	//replyMsg(context.Background(), "已选择角色:"+contentByTitle,
 	//	&msg.MsgId)
 	return nil, nil, true

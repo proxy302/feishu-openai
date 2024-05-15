@@ -8,8 +8,8 @@ import (
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 )
 
-func NewClearCardHandler(cardMsg CardMsg, m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+func NewClearCardHandler(cardMsg CardMsg, m MessageHandler, tokenMappingID int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 		if cardMsg.Kind == ClearCardKind {
 			newCard, err, done := CommonProcessClearCache(cardMsg, m.sessionCache)
 			if done {

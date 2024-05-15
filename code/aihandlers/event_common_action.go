@@ -24,9 +24,10 @@ type MsgInfo struct {
 	mention     []*larkim.MentionEvent
 }
 type ActionInfo struct {
-	handler *MessageHandler
-	ctx     *context.Context
-	info    *MsgInfo
+	handler        *MessageHandler
+	ctx            *context.Context
+	info           *MsgInfo
+	TokenMappingID int
 }
 
 type Action interface {
@@ -34,6 +35,7 @@ type Action interface {
 }
 
 type ProcessedUniqueAction struct { //消息唯一性
+	TokenMappingID int
 }
 
 func (*ProcessedUniqueAction) Execute(a *ActionInfo) bool {
@@ -45,6 +47,7 @@ func (*ProcessedUniqueAction) Execute(a *ActionInfo) bool {
 }
 
 type ProcessMentionAction struct { //是否机器人应该处理
+	TokenMappingID int
 }
 
 func (*ProcessMentionAction) Execute(a *ActionInfo) bool {
@@ -63,11 +66,12 @@ func (*ProcessMentionAction) Execute(a *ActionInfo) bool {
 }
 
 type EmptyAction struct { /*空消息*/
+	TokenMappingID int
 }
 
 func (*EmptyAction) Execute(a *ActionInfo) bool {
 	if len(a.info.qParsed) == 0 {
-		sendMsg(*a.ctx, "🤖️：你想知道什么呢~", a.info.chatId)
+		sendMsg(*a.ctx, "🤖️：你想知道什么呢~", a.info.chatId, a.TokenMappingID)
 		fmt.Println("msgId", *a.info.msgId,
 			"message.text is empty")
 
@@ -77,19 +81,21 @@ func (*EmptyAction) Execute(a *ActionInfo) bool {
 }
 
 type ClearAction struct { /*清除消息*/
+	TokenMappingID int
 }
 
 func (*ClearAction) Execute(a *ActionInfo) bool {
 	if _, foundClear := utils.EitherTrimEqual(a.info.qParsed,
 		"/clear", "清除"); foundClear {
 		sendClearCacheCheckCard(*a.ctx, a.info.sessionId,
-			a.info.msgId)
+			a.info.msgId, a.TokenMappingID)
 		return false
 	}
 	return true
 }
 
 type RolePlayAction struct { /*角色扮演*/
+	TokenMappingID int
 }
 
 func (*RolePlayAction) Execute(a *ActionInfo) bool {
@@ -101,25 +107,27 @@ func (*RolePlayAction) Execute(a *ActionInfo) bool {
 		})
 		a.handler.sessionCache.SetMsg(*a.info.sessionId, systemMsg)
 		sendSystemInstructionCard(*a.ctx, a.info.sessionId,
-			a.info.msgId, system)
+			a.info.msgId, system, a.TokenMappingID)
 		return false
 	}
 	return true
 }
 
 type HelpAction struct { /*帮助*/
+	TokenMappingID int
 }
 
 func (*HelpAction) Execute(a *ActionInfo) bool {
 	if _, foundHelp := utils.EitherTrimEqual(a.info.qParsed, "/help",
 		"帮助"); foundHelp {
-		sendHelpCard(*a.ctx, a.info.sessionId, a.info.msgId)
+		sendHelpCard(*a.ctx, a.info.sessionId, a.info.msgId, a.TokenMappingID)
 		return false
 	}
 	return true
 }
 
 type BalanceAction struct { /*余额*/
+	TokenMappingID int
 }
 
 func (*BalanceAction) Execute(a *ActionInfo) bool {
@@ -127,16 +135,17 @@ func (*BalanceAction) Execute(a *ActionInfo) bool {
 		"/balance", "余额"); foundBalance {
 		balanceResp, err := a.handler.gpt.GetBalance()
 		if err != nil {
-			replyMsg(*a.ctx, "查询余额失败，请稍后再试", a.info.msgId)
+			replyMsg(*a.ctx, "查询余额失败，请稍后再试", a.info.msgId, a.TokenMappingID)
 			return false
 		}
-		sendBalanceCard(*a.ctx, a.info.sessionId, *balanceResp)
+		sendBalanceCard(*a.ctx, a.info.sessionId, *balanceResp, a.TokenMappingID)
 		return false
 	}
 	return true
 }
 
 type RoleListAction struct { /*角色列表*/
+	TokenMappingID int
 }
 
 func (*RoleListAction) Execute(a *ActionInfo) bool {
@@ -150,19 +159,20 @@ func (*RoleListAction) Execute(a *ActionInfo) bool {
 		//sendSystemInstructionCard(*a.ctx, a.info.sessionId,
 		//	a.info.msgId, system)
 		tags := initialization.GetAllUniqueTags()
-		SendRoleTagsCard(*a.ctx, a.info.sessionId, a.info.msgId, *tags)
+		SendRoleTagsCard(*a.ctx, a.info.sessionId, a.info.msgId, *tags, a.TokenMappingID)
 		return false
 	}
 	return true
 }
 
 type AIModeAction struct { /*发散模式*/
+	TokenMappingID int
 }
 
 func (*AIModeAction) Execute(a *ActionInfo) bool {
 	if _, foundMode := utils.EitherCutPrefix(a.info.qParsed,
 		"/ai_mode", "发散模式"); foundMode {
-		SendAIModeListsCard(*a.ctx, a.info.sessionId, a.info.msgId, openai.AIModeStrs)
+		SendAIModeListsCard(*a.ctx, a.info.sessionId, a.info.msgId, openai.AIModeStrs, a.TokenMappingID)
 		return false
 	}
 	return true

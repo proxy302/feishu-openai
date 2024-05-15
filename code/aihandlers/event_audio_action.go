@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"start-feishubot/initialization"
 	"start-feishubot/utils/audio"
 
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 )
 
 type AudioAction struct { /*语音*/
+	TokenMappingID int
 }
 
 func (*AudioAction) Execute(a *ActionInfo) bool {
@@ -33,7 +33,7 @@ func (*AudioAction) Execute(a *ActionInfo) bool {
 		//fmt.Println("msgId: ", *msgId)
 		req := larkim.NewGetMessageResourceReqBuilder().MessageId(
 			*msgId).FileKey(fileKey).Type("file").Build()
-		resp, err := initialization.GetLarkClient().Im.MessageResource.Get(context.Background(), req)
+		resp, err := GetLarkClient(a.TokenMappingID).Im.MessageResource.Get(context.Background(), req)
 		//fmt.Println(resp, err)
 		if err != nil {
 			fmt.Println(err)
@@ -54,11 +54,11 @@ func (*AudioAction) Execute(a *ActionInfo) bool {
 		if err != nil {
 			fmt.Println(err)
 
-			sendMsg(*a.ctx, fmt.Sprintf("🤖️：语音转换失败，请稍后再试～\n错误信息: %v", err), a.info.msgId)
+			sendMsg(*a.ctx, fmt.Sprintf("🤖️：语音转换失败，请稍后再试～\n错误信息: %v", err), a.info.msgId, a.TokenMappingID)
 			return false
 		}
 
-		replyMsg(*a.ctx, fmt.Sprintf("🤖️：%s", text), a.info.msgId)
+		replyMsg(*a.ctx, fmt.Sprintf("🤖️：%s", text), a.info.msgId, a.TokenMappingID)
 		//fmt.Println("text: ", text)
 		a.info.qParsed = text
 		return true

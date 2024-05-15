@@ -11,12 +11,12 @@ import (
 
 // AIModeChooseKind is the kind of card action for choosing AI mode
 func NewAIModeCardHandler(cardMsg CardMsg,
-	m MessageHandler) CardHandlerFunc {
-	return func(ctx context.Context, cardAction *larkcard.CardAction) (interface{}, error) {
+	m MessageHandler, tokenMapping int) CardHandlerFunc {
+	return func(ctx context.Context, cardAction *larkcard.CardAction, tokenMappingID int) (interface{}, error) {
 
 		if cardMsg.Kind == AIModeChooseKind {
 			newCard, err, done := CommonProcessAIMode(cardMsg, cardAction,
-				m.sessionCache)
+				m.sessionCache, tokenMappingID)
 			if done {
 				return newCard, err
 			}
@@ -28,11 +28,11 @@ func NewAIModeCardHandler(cardMsg CardMsg,
 
 // CommonProcessAIMode is the common process for choosing AI mode
 func CommonProcessAIMode(msg CardMsg, cardAction *larkcard.CardAction,
-	cache services.SessionServiceCacheInterface) (interface{},
+	cache services.SessionServiceCacheInterface, tokenMappingID int) (interface{},
 	error, bool) {
 	option := cardAction.Action.Option
 	replyMsg(context.Background(), "已选择发散模式:"+option,
-		&msg.MsgId)
+		&msg.MsgId, tokenMappingID)
 	cache.SetAIMode(msg.SessionId, openai.AIModeMap[option])
 	return nil, nil, true
 }

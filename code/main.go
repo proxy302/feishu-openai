@@ -3,12 +3,9 @@ package main
 import (
 	"start-feishubot/feishu_handler"
 	"start-feishubot/gredis"
-	"start-feishubot/handlers"
 	"start-feishubot/initialization"
 	"start-feishubot/logger"
 	"start-feishubot/models"
-
-	"start-feishubot/services/openai"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/pflag"
@@ -18,9 +15,9 @@ func main() {
 	initialization.InitRoleList()
 	pflag.Parse()
 	config := initialization.GetConfig()
-	initialization.LoadLarkClient(*config)
-	gpt := openai.NewChatGPT(*config)
-	handlers.InitHandlers(gpt, *config)
+	// initialization.LoadLarkClient(*config)
+	// gpt := openai.NewChatGPT(*config)
+	// handlers.InitHandlers(gpt, *config)
 
 	models.Setup()
 	gredis.Setup()
@@ -44,7 +41,7 @@ func main() {
 		})
 	})
 	r.POST("/webhook/event", feishu_handler.EventHandler)
-	r.POST("/webhook/card", feishu_handler.CardHandler)
+	// r.POST("/webhook/card", feishu_handler.CardHandler)
 	r.POST("/webhook/update", feishu_handler.UpdateHandler)
 	// 	r.POST("/webhook/event",
 	// 		sdkginext.NewEventHandlerFunc(eventHandler))
